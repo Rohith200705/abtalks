@@ -76,8 +76,8 @@ export function CompletionModal({
   isOpen,
   onClose,
   result,
-  day = 12,
-  challengeTitle = "Two Sum",
+  day = 1,
+  challengeTitle = "",
 }: CompletionModalProps) {
   // Close on Escape
   useEffect(() => {
