@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ABTalks - Start Your Coding Journey",
   description:
-    "A 100-day coding challenge platform. Solve daily challenges, track your progress, and level up your programming skills with ABTalks.",
+    "A 60-day coding challenge platform. Solve daily challenges, track your progress, and level up your programming skills with ABTalks.",
 };
 
 export default function RootLayout({
@@ -26,10 +27,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
+      className={geistSans.variable + " " + geistMono.variable + " dark h-full antialiased"}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

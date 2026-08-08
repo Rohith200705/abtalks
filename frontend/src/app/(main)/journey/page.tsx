@@ -12,58 +12,13 @@ import {
   Sparkles,
   TrendingUp,
   X,
+  AlertCircle,
 } from "lucide-react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { cn, getDifficultyBg } from "@/lib/utils";
 import { progressApi, challengesApi } from "@/lib/api";
 import type { Progress, Challenge } from "@/types";
 
-/* ------------------------------------------------------------------ */
-/*  Mock data                                                          */
-/* ------------------------------------------------------------------ */
-const mockProgress: Progress = {
-  _id: "p1",
-  userId: "u1",
-  currentDay: 12,
-  completedDays: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-  streak: 11,
-  longestStreak: 11,
-  xp: 2840,
-  rank: 5,
-  selectedTrack: "default",
-  totalSolved: 11,
-  easySolved: 8,
-  mediumSolved: 3,
-  hardSolved: 0,
-  lastActivityAt: new Date().toISOString(),
-};
-
-const mockChallengeMap: Record<number, { title: string; difficulty: string; topics: string[] }> = {
-  1: { title: "Two Sum", difficulty: "easy", topics: ["Arrays", "Hash Map"] },
-  2: { title: "Valid Parentheses", difficulty: "easy", topics: ["Stack", "String"] },
-  3: { title: "Merge Two Sorted Lists", difficulty: "easy", topics: ["Linked List", "Recursion"] },
-  4: { title: "Best Time to Buy and Sell Stock", difficulty: "easy", topics: ["Arrays", "DP"] },
-  5: { title: "Maximum Subarray", difficulty: "medium", topics: ["Array", "DP"] },
-  6: { title: "Reverse Linked List", difficulty: "easy", topics: ["Linked List", "Recursion"] },
-  7: { title: "Contains Duplicate", difficulty: "easy", topics: ["Array", "Hash Set"] },
-  8: { title: "Valid Anagram", difficulty: "easy", topics: ["String", "Hash Map"] },
-  9: { title: "Binary Search", difficulty: "easy", topics: ["Array", "Binary Search"] },
-  10: { title: "Maximum Depth of Binary Tree", difficulty: "easy", topics: ["Tree", "DFS", "BFS"] },
-  11: { title: "Minimum Depth of Binary Tree", difficulty: "easy", topics: ["Tree", "DFS", "BFS"] },
-  12: { title: "Two Sum (Revisited)", difficulty: "easy", topics: ["Arrays", "Hash Map"] },
-  13: { title: "Longest Substring Without Repeating Characters", difficulty: "medium", topics: ["Sliding Window", "Hash Map"] },
-  14: { title: "Climbing Stairs", difficulty: "medium", topics: ["DP", "Math"] },
-  15: { title: "LRU Cache", difficulty: "hard", topics: ["Hash Map", "Linked List", "Design"] },
-  16: { title: "Merge Intervals", difficulty: "medium", topics: ["Array", "Sorting"] },
-  17: { title: "Word Search", difficulty: "medium", topics: ["Backtracking", "Matrix"] },
-  18: { title: "Find Median from Data Stream", difficulty: "hard", topics: ["Heap", "Design"] },
-  19: { title: "Serialize and Deserialize BST", difficulty: "hard", topics: ["Tree", "DFS"] },
-  20: { title: "Course Schedule", difficulty: "medium", topics: ["Graph", "Topological Sort"] },
-};
-
-/* ------------------------------------------------------------------ */
-/*  Animation wrapper                                                  */
-/* ------------------------------------------------------------------ */
 function FadeIn({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
@@ -74,9 +29,6 @@ function FadeIn({ children, className, delay = 0 }: { children: React.ReactNode;
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Day Tile                                                           */
-/* ------------------------------------------------------------------ */
 function DayTile({
   day,
   status,
@@ -101,10 +53,7 @@ function DayTile({
       {status === "completed" && (
         <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 mb-0.5" />
       )}
-      <span className={cn(
-        "text-xs sm:text-sm",
-        status === "current" && "text-primary"
-      )}>
+      <span className={cn("text-xs sm:text-sm", status === "current" && "text-primary")}>
         {day}
       </span>
       {status === "current" && (
@@ -116,19 +65,17 @@ function DayTile({
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Day Detail Modal                                                   */
-/* ------------------------------------------------------------------ */
 function DayDetailModal({
   day,
-  info,
+  challengeInfo,
+  loading,
   onClose,
 }: {
   day: number;
-  info: { title: string; difficulty: string; topics: string[] } | null;
+  challengeInfo: Challenge | null;
+  loading: boolean;
   onClose: () => void;
 }) {
-  if (!info) return null;
   return (
     <AnimatePresence>
       <motion.div
@@ -154,19 +101,33 @@ function DayDetailModal({
               <X className="w-5 h-5" />
             </button>
           </div>
-          <h3 className="text-lg font-bold mb-3">{info.title}</h3>
-          <div className="flex flex-wrap gap-2 mb-4">
-            <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border", getDifficultyBg(info.difficulty))}>
-              {info.difficulty.charAt(0).toUpperCase() + info.difficulty.slice(1)}
-            </span>
-            {info.topics.map((t) => (
-              <span key={t} className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-white/5 text-muted border border-border">
-                {t}
-              </span>
-            ))}
-          </div>
+          {loading ? (
+            <div className="space-y-3 animate-pulse">
+              <div className="h-5 bg-white/5 rounded w-3/4" />
+              <div className="flex gap-2">
+                <div className="h-5 bg-white/5 rounded w-16" />
+                <div className="h-5 bg-white/5 rounded w-20" />
+              </div>
+            </div>
+          ) : challengeInfo ? (
+            <>
+              <h3 className="text-lg font-bold mb-3">{challengeInfo.title}</h3>
+              <div className="flex flex-wrap gap-2 mb-4">
+                <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border", getDifficultyBg(challengeInfo.difficulty))}>
+                  {challengeInfo.difficulty.charAt(0).toUpperCase() + challengeInfo.difficulty.slice(1)}
+                </span>
+                {challengeInfo.topics.map((t) => (
+                  <span key={t} className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-white/5 text-muted border border-border">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted mb-4">Challenge details not available</p>
+          )}
           <Link
-            href={`/day/${day}`}
+            href={"/day/" + day}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold btn-gradient text-white"
             onClick={onClose}
           >
@@ -179,23 +140,24 @@ function DayDetailModal({
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
 export default function JourneyPage() {
   const [progress, setProgress] = useState<Progress | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedDayChallenge, setSelectedDayChallenge] = useState<Challenge | null>(null);
+  const [dayLoading, setDayLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      setError(null);
       try {
         const data: any = await progressApi.get();
         if (!cancelled) setProgress(data.progress ?? data);
       } catch {
-        if (!cancelled) setProgress(mockProgress);
+        if (!cancelled) setError("Failed to load progress");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -203,10 +165,31 @@ export default function JourneyPage() {
     return () => { cancelled = true; };
   }, []);
 
-  const p = progress ?? mockProgress;
-  const completionPercent = Math.round((p.completedDays.length / 60) * 100);
+  useEffect(() => {
+    if (!selectedDay) {
+      setSelectedDayChallenge(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setDayLoading(true);
+      try {
+        const data: any = await challengesApi.getByDay(selectedDay);
+        if (!cancelled) setSelectedDayChallenge(data.challenge ?? data);
+      } catch {
+        if (!cancelled) setSelectedDayChallenge(null);
+      } finally {
+        if (!cancelled) setDayLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedDay]);
+
+  const p = progress;
+  const completionPercent = p ? Math.round((p.completedDays.length / 60) * 100) : 0;
 
   const getDayStatus = (day: number): "completed" | "current" | "future" => {
+    if (!p) return "future";
     if (p.completedDays.includes(day)) return "completed";
     if (day === p.currentDay) return "current";
     return "future";
@@ -214,9 +197,6 @@ export default function JourneyPage() {
 
   return (
     <div className="min-h-screen px-4 py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
-      {/* ============================================================ */}
-      {/*  HEADER                                                       */}
-      {/* ============================================================ */}
       <FadeIn>
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
@@ -227,117 +207,147 @@ export default function JourneyPage() {
         </div>
       </FadeIn>
 
-      {/* ============================================================ */}
-      {/*  PROGRESS BAR                                                 */}
-      {/* ============================================================ */}
-      <FadeIn delay={0.05}>
-        <div className="glass-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-muted font-medium">Overall Progress</span>
-            <span className="text-sm font-bold text-primary">{completionPercent}%</span>
+      {loading ? (
+        <div className="space-y-6">
+          <div className="glass-card p-5 animate-pulse">
+            <div className="h-4 bg-white/5 rounded w-32 mb-3" />
+            <div className="h-3 bg-white/5 rounded w-full mb-2" />
+            <div className="h-4 bg-white/5 rounded w-24" />
           </div>
-          <div className="w-full h-3 rounded-full bg-white/5 overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${completionPercent}%` }}
-              transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
-              className="h-full rounded-full bg-gradient-to-r from-primary to-secondary"
-            />
-          </div>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-muted">Day {p.currentDay} of 60</span>
-            <span className="text-xs text-muted">{p.completedDays.length} completed</span>
-          </div>
-        </div>
-      </FadeIn>
-
-      {/* ============================================================ */}
-      {/*  STATS ROW                                                    */}
-      {/* ============================================================ */}
-      <FadeIn delay={0.1}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <div className="glass-card p-4 flex flex-col items-center text-center gap-1">
-            <Flame className="w-5 h-5 text-orange-400 mb-1" />
-            <span className="text-xl font-bold">{p.streak}</span>
-            <span className="text-xs text-muted">Current Streak</span>
-          </div>
-          <div className="glass-card p-4 flex flex-col items-center text-center gap-1">
-            <TrendingUp className="w-5 h-5 text-blue-400 mb-1" />
-            <span className="text-xl font-bold">{p.longestStreak}</span>
-            <span className="text-xs text-muted">Longest Streak</span>
-          </div>
-          <div className="glass-card p-4 flex flex-col items-center text-center gap-1">
-            <Zap className="w-5 h-5 text-yellow-400 mb-1" />
-            <span className="text-xl font-bold">{p.xp.toLocaleString()}</span>
-            <span className="text-xs text-muted">XP Earned</span>
-          </div>
-          <div className="glass-card p-4 flex flex-col items-center text-center gap-1">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 mb-1" />
-            <span className="text-xl font-bold">{p.totalSolved}</span>
-            <span className="text-xs text-muted">Challenges Solved</span>
-          </div>
-          <div className="glass-card p-4 flex flex-col items-center text-center gap-1 col-span-2 sm:col-span-3 lg:col-span-1">
-            <Sparkles className="w-5 h-5 text-purple-400 mb-1" />
-            <span className="text-xl font-bold">{completionPercent}%</span>
-            <span className="text-xs text-muted">Completion</span>
-          </div>
-        </div>
-      </FadeIn>
-
-      {/* ============================================================ */}
-      {/*  JOURNEY GRID                                                 */}
-      {/* ============================================================ */}
-      <FadeIn delay={0.15}>
-        <div className="glass-card p-5">
-          <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-primary" />
-            Day-by-Day Journey
-          </h3>
-          <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-10 gap-2">
-            {Array.from({ length: 60 }, (_, i) => i + 1).map((day) => (
-              <DayTile
-                key={day}
-                day={day}
-                status={getDayStatus(day)}
-                onClick={() => setSelectedDay(day)}
-              />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="glass-card p-4 space-y-2 animate-pulse">
+                <div className="h-5 bg-white/5 rounded w-5 mx-auto" />
+                <div className="h-6 bg-white/5 rounded w-12 mx-auto" />
+                <div className="h-3 bg-white/5 rounded w-20 mx-auto" />
+              </div>
             ))}
           </div>
         </div>
-      </FadeIn>
+      ) : error ? (
+        <FadeIn>
+          <div className="glass-card p-12 text-center">
+            <AlertCircle className="w-12 h-12 text-red-400/40 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Failed to load progress</h3>
+            <p className="text-sm text-muted">{error}</p>
+          </div>
+        </FadeIn>
+      ) : p ? (
+        <>
+          {/* PROGRESS BAR */}
+          <FadeIn delay={0.05}>
+            <div className="glass-card p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-muted font-medium">Overall Progress</span>
+                <span className="text-sm font-bold text-primary">{completionPercent}%</span>
+              </div>
+              <div className="w-full h-3 rounded-full bg-white/5 overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: completionPercent + "%" }}
+                  transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-secondary"
+                />
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-muted">Day {p.currentDay} of 60</span>
+                <span className="text-xs text-muted">{p.completedDays.length} completed</span>
+              </div>
+            </div>
+          </FadeIn>
 
-      {/* ============================================================ */}
-      {/*  LEGEND                                                       */}
-      {/* ============================================================ */}
-      <FadeIn delay={0.2}>
-        <div className="flex flex-wrap items-center gap-4 text-xs text-muted">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500/30" />
-            <span>Completed</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-primary/20 border border-primary/30" />
-            <span>Current</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded bg-white/5 border border-border" />
-            <span>Upcoming</span>
-          </div>
-        </div>
-      </FadeIn>
+          {/* STATS ROW */}
+          <FadeIn delay={0.1}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <div className="glass-card p-4 flex flex-col items-center text-center gap-1">
+                <Flame className="w-5 h-5 text-orange-400 mb-1" />
+                <span className="text-xl font-bold">{p.streak}</span>
+                <span className="text-xs text-muted">Current Streak</span>
+              </div>
+              <div className="glass-card p-4 flex flex-col items-center text-center gap-1">
+                <TrendingUp className="w-5 h-5 text-blue-400 mb-1" />
+                <span className="text-xl font-bold">{p.longestStreak}</span>
+                <span className="text-xs text-muted">Longest Streak</span>
+              </div>
+              <div className="glass-card p-4 flex flex-col items-center text-center gap-1">
+                <Zap className="w-5 h-5 text-yellow-400 mb-1" />
+                <span className="text-xl font-bold">{p.xp.toLocaleString()}</span>
+                <span className="text-xs text-muted">XP Earned</span>
+              </div>
+              <div className="glass-card p-4 flex flex-col items-center text-center gap-1">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 mb-1" />
+                <span className="text-xl font-bold">{p.totalSolved}</span>
+                <span className="text-xs text-muted">Challenges Solved</span>
+              </div>
+              <div className="glass-card p-4 flex flex-col items-center text-center gap-1 col-span-2 sm:col-span-3 lg:col-span-1">
+                <Sparkles className="w-5 h-5 text-purple-400 mb-1" />
+                <span className="text-xl font-bold">{completionPercent}%</span>
+                <span className="text-xs text-muted">Completion</span>
+              </div>
+            </div>
+          </FadeIn>
 
-      {/* ============================================================ */}
-      {/*  DAY DETAIL MODAL                                             */}
-      {/* ============================================================ */}
+          {/* JOURNEY GRID */}
+          <FadeIn delay={0.15}>
+            <div className="glass-card p-5">
+              <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-primary" />
+                Day-by-Day Journey
+              </h3>
+              <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-10 gap-2">
+                {Array.from({ length: 60 }, (_, i) => i + 1).map((day) => (
+                  <DayTile
+                    key={day}
+                    day={day}
+                    status={getDayStatus(day)}
+                    onClick={() => setSelectedDay(day)}
+                  />
+                ))}
+              </div>
+            </div>
+          </FadeIn>
+
+          {/* LEGEND */}
+          <FadeIn delay={0.2}>
+            <div className="flex flex-wrap items-center gap-4 text-xs text-muted">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500/30" />
+                <span>Completed</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded bg-primary/20 border border-primary/30" />
+                <span>Current</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded bg-white/5 border border-border" />
+                <span>Upcoming</span>
+              </div>
+            </div>
+          </FadeIn>
+        </>
+      ) : (
+        <FadeIn>
+          <div className="glass-card p-12 text-center">
+            <Calendar className="w-12 h-12 text-muted/30 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No progress data</h3>
+            <p className="text-sm text-muted">Start your first challenge to begin tracking!</p>
+            <Link href="/challenges" className="mt-4 inline-flex items-center gap-2 text-sm text-primary hover:underline">
+              Browse Challenges <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </FadeIn>
+      )}
+
+      {/* DAY DETAIL MODAL */}
       {selectedDay && (
         <DayDetailModal
           day={selectedDay}
-          info={mockChallengeMap[selectedDay] ?? { title: `Day ${selectedDay} Challenge`, difficulty: "medium", topics: ["General"] }}
+          challengeInfo={selectedDayChallenge}
+          loading={dayLoading}
           onClose={() => setSelectedDay(null)}
         />
       )}
 
-      {/* Bottom spacer for mobile nav */}
       <div className="h-8 md:h-0" />
     </div>
   );

@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+﻿import dotenv from 'dotenv';
 dotenv.config();
 
 export const env = {
@@ -15,5 +15,6 @@ export const env = {
   LINKEDIN_REDIRECT_URI: process.env.LINKEDIN_REDIRECT_URI || 'http://localhost:5000/api/linkedin/callback',
   LINKEDIN_MODE: process.env.LINKEDIN_MODE || 'demo',
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || 'defaultencryptionkey123456789012',
+  JWT_SECRET: process.env.JWT_SECRET || 'abtalks-jwt-secret-2024',
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
 };

@@ -36,6 +36,35 @@ const LANGUAGE_MAP: Record<string, number> = {
   rust: 73,
 };
 
+function hasRealLogic(code: string): boolean {
+  const lower = code.toLowerCase();
+  const logicPatterns = [
+    /\bfor\b/,
+    /\bwhile\b/,
+    /\bif\b/,
+    /\belse\b/,
+    /\bin\b/,
+    /\brange\b/,
+    /\bhashmap\b/,
+    /\bdict\b/,
+    /\bmap\b/,
+    /\bset\b/,
+    /\.get\(/,
+    /\.has\(/,
+    /\bin\s+\w+/,
+    /\[\w+\s*[+\-*\/]=/,
+    /\w+\[.*\]\s*=/,
+    /\breturn\s+\[/,
+    /\bappend\(/,
+    /\bpush\(/,
+  ];
+  let matchCount = 0;
+  for (const pat of logicPatterns) {
+    if (pat.test(lower) || pat.test(code)) matchCount++;
+  }
+  return matchCount >= 2;
+}
+
 const getMockResults = (code: string, language: string, testCases: TestCase[]): ExecutionResult => {
   const isFunctionDefined =
     code.includes('function ') ||
@@ -57,6 +86,50 @@ const getMockResults = (code: string, language: string, testCases: TestCase[]): 
         expected: tc.expected,
         actual: 'Compilation Error',
       })),
+    };
+  }
+
+  const hasOnlyStub =
+    /\bpass\b/.test(code) &&
+    !code.includes('for ') &&
+    !code.includes('while ') &&
+    !code.includes('if ');
+
+  if (hasOnlyStub) {
+    return {
+      status: 'runtime_error',
+      stdout: '',
+      stderr: 'Runtime Error: function body not implemented (pass statement found)',
+      compileOutput: '',
+      runtime: 0,
+      memory: 0,
+      testResults: testCases.map((tc) => ({
+        passed: false,
+        input: tc.input,
+        expected: tc.expected,
+        actual: 'Runtime Error: NotImplementedError',
+      })),
+    };
+  }
+
+  const realLogic = hasRealLogic(code);
+
+  if (!realLogic) {
+    const halfPass = Math.ceil(testCases.length / 2);
+    const testResults: TestResult[] = testCases.map((tc, i) => ({
+      passed: i < halfPass,
+      input: tc.input,
+      expected: tc.expected,
+      actual: i < halfPass ? tc.expected : 'Wrong Answer',
+    }));
+    return {
+      status: 'wrong_answer',
+      stdout: '',
+      stderr: '',
+      compileOutput: '',
+      runtime: Math.floor(Math.random() * 30) + 5,
+      memory: Math.floor(Math.random() * 500) + 200,
+      testResults,
     };
   }
 

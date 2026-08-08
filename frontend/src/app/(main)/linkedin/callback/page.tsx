@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -10,17 +10,34 @@ import {
   Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { linkedinApi } from "@/lib/api";
 
 export default function LinkedInCallbackPage() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    // Simulate OAuth callback processing
-    const timer = setTimeout(() => {
-      // For demo mode, always show success
-      setStatus("success");
-    }, 1500);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    (async () => {
+      try {
+        const data: any = await linkedinApi.getStatus();
+        const liStatus = data.status ?? data;
+        if (!cancelled) {
+          if (liStatus?.connected) {
+            setStatus("success");
+          } else {
+            setStatus("error");
+            setErrorMsg("LinkedIn connection was not established. Please try again.");
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setStatus("error");
+          setErrorMsg("Failed to verify LinkedIn connection status.");
+        }
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   return (
@@ -31,17 +48,15 @@ export default function LinkedInCallbackPage() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="glass-card glow-blue p-8 max-w-md w-full text-center"
       >
-        {/* LinkedIn Icon */}
         <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
           <Share2 className="w-8 h-8 text-[#0A66C2]" />
         </div>
 
-        {/* Status */}
         {status === "loading" && (
           <div className="space-y-4">
             <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
             <h1 className="text-xl font-bold">Connecting to LinkedIn...</h1>
-            <p className="text-sm text-muted">Please wait while we complete the connection.</p>
+            <p className="text-sm text-muted">Please wait while we verify your connection.</p>
           </div>
         )}
 
@@ -56,8 +71,7 @@ export default function LinkedInCallbackPage() {
             </div>
             <h1 className="text-xl font-bold">LinkedIn Connected!</h1>
             <p className="text-sm text-muted">
-              LinkedIn connected in demo mode
-              <span className="text-emerald-400 font-medium"> ✓</span>
+              Your LinkedIn account has been successfully connected.
             </p>
             <p className="text-xs text-muted/60">
               Your coding achievements will be shared on your LinkedIn profile.
@@ -76,12 +90,11 @@ export default function LinkedInCallbackPage() {
             </div>
             <h1 className="text-xl font-bold">Connection Failed</h1>
             <p className="text-sm text-muted">
-              Something went wrong while connecting to LinkedIn.
+              {errorMsg || "Something went wrong while connecting to LinkedIn."}
             </p>
           </motion.div>
         )}
 
-        {/* Back button */}
         <Link
           href="/dashboard"
           className="mt-6 inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold btn-gradient text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.01]"

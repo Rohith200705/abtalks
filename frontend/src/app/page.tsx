@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useRef } from "react";
 import Link from "next/link";
@@ -13,15 +13,11 @@ import {
   Zap,
   Calendar,
   GitBranch,
-  Play,
   ChevronRight,
 } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-/* ------------------------------------------------------------------ */
-/*  Reusable animation wrapper                                         */
-/* ------------------------------------------------------------------ */
 function FadeIn({
   children,
   className,
@@ -47,9 +43,6 @@ function FadeIn({
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Data                                                               */
-/* ------------------------------------------------------------------ */
 const features = [
   {
     icon: PenTool,
@@ -88,8 +81,6 @@ const languages = [
 ];
 
 const timelineDays = Array.from({ length: 30 }, (_, i) => i + 1);
-const completedDays = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-const currentDay = 13;
 
 const stats = [
   { label: "Daily Challenges", icon: Calendar },
@@ -98,17 +89,11 @@ const stats = [
   { label: "GitHub Integration", icon: GitBranch },
 ];
 
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
-      {/* ============================================================ */}
-      {/*  HERO                                                        */}
-      {/* ============================================================ */}
+      {/* HERO */}
       <section className="relative flex flex-col items-center justify-center min-h-screen px-4 text-center overflow-hidden">
-        {/* Animated gradient blobs */}
         <div className="absolute inset-0 -z-10 pointer-events-none">
           <motion.div
             className="absolute w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px]"
@@ -140,7 +125,6 @@ export default function LandingPage() {
         </div>
 
         <FadeIn>
-          {/* Logo */}
           <div className="mb-8">
             <span className="text-6xl sm:text-7xl md:text-8xl font-bold tracking-tight">
               <span className="gradient-text">AB</span>
@@ -165,14 +149,14 @@ export default function LandingPage() {
         <FadeIn delay={0.3}>
           <div className="mt-10 flex flex-col sm:flex-row gap-4">
             <Link
-              href="/dashboard"
+              href="/signup"
               className="btn-gradient text-white font-semibold px-8 py-3.5 rounded-xl text-base inline-flex items-center justify-center gap-2 shadow-lg shadow-primary/25 transition-all hover:scale-105"
             >
               Start Your 60-Day Journey
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href="/challenges"
+              href="/login"
               className="glass-card glass-card-hover text-white font-semibold px-8 py-3.5 rounded-xl text-base inline-flex items-center justify-center gap-2 transition-all hover:scale-105"
             >
               Explore Challenges
@@ -181,7 +165,6 @@ export default function LandingPage() {
           </div>
         </FadeIn>
 
-        {/* Scroll indicator */}
         <motion.div
           className="absolute bottom-8"
           animate={{ y: [0, 8, 0] }}
@@ -197,9 +180,7 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* ============================================================ */}
-      {/*  FEATURES  (How It Works)                                    */}
-      {/* ============================================================ */}
+      {/* FEATURES */}
       <section className="py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <FadeIn>
@@ -220,7 +201,6 @@ export default function LandingPage() {
               return (
                 <FadeIn key={feature.title} delay={i * 0.1}>
                   <div className="glass-card p-6 h-full flex flex-col items-center text-center glass-card-hover transition-all duration-300 group">
-                    {/* Icon circle */}
                     <div
                       className={cn(
                         "w-14 h-14 rounded-full flex items-center justify-center mb-5",
@@ -245,9 +225,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ============================================================ */}
-      {/*  JOURNEY  (Timeline)                                         */}
-      {/* ============================================================ */}
+      {/* JOURNEY TIMELINE */}
       <section className="py-24 px-4">
         <div className="max-w-6xl mx-auto">
           <FadeIn>
@@ -259,43 +237,18 @@ export default function LandingPage() {
             </div>
           </FadeIn>
 
-          {/* Horizontal scroll timeline */}
           <FadeIn delay={0.1}>
             <div className="overflow-x-auto pb-4 -mx-4 px-4">
               <div className="flex gap-3 min-w-max">
                 {timelineDays.map((day) => {
-                  const isCompleted = completedDays.includes(day);
-                  const isCurrent = day === currentDay;
                   return (
                     <div
                       key={day}
-                      className={cn(
-                        "flex flex-col items-center gap-2 shrink-0"
-                      )}
+                      className="flex flex-col items-center gap-2 shrink-0"
                     >
-                      <div
-                        className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold transition-all border",
-                          isCompleted &&
-                            "bg-primary/20 border-primary text-primary",
-                          isCurrent &&
-                            "bg-gradient-to-br from-primary to-secondary text-white border-0 shadow-lg shadow-primary/30",
-                          !isCompleted &&
-                            !isCurrent &&
-                            "bg-white/5 border-white/10 text-muted"
-                        )}
-                      >
-                        {isCompleted ? (
-                          <Check className="w-4 h-4" />
-                        ) : (
-                          day
-                        )}
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold transition-all border bg-white/5 border-white/10 text-muted">
+                        {day}
                       </div>
-                      {isCurrent && (
-                        <span className="text-[10px] text-primary font-medium">
-                          Day {day}
-                        </span>
-                      )}
                     </div>
                   );
                 })}
@@ -303,7 +256,6 @@ export default function LandingPage() {
             </div>
           </FadeIn>
 
-          {/* Stats row */}
           <FadeIn delay={0.2}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-12">
               {stats.map((stat) => {
@@ -323,9 +275,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ============================================================ */}
-      {/*  SUPPORTED LANGUAGES                                         */}
-      {/* ============================================================ */}
+      {/* SUPPORTED LANGUAGES */}
       <section className="py-24 px-4">
         <div className="max-w-4xl mx-auto">
           <FadeIn>
@@ -358,9 +308,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ============================================================ */}
-      {/*  CODE PREVIEW                                                */}
-      {/* ============================================================ */}
+      {/* CODE PREVIEW */}
       <section className="py-24 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -380,14 +328,12 @@ export default function LandingPage() {
 
             <FadeIn delay={0.15}>
               <div className="glass-card overflow-hidden">
-                {/* Editor title bar */}
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
                   <div className="w-3 h-3 rounded-full bg-red-500/60" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
                   <div className="w-3 h-3 rounded-full bg-green-500/60" />
                   <span className="ml-2 text-xs text-muted">two_sum.py</span>
                 </div>
-                {/* Code content */}
                 <pre className="p-5 text-sm leading-6 overflow-x-auto font-mono">
                   <code>
                     <span className="text-purple-400">def</span>
@@ -446,13 +392,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ============================================================ */}
-      {/*  CTA                                                         */}
-      {/* ============================================================ */}
+      {/* CTA */}
       <section className="py-24 px-4">
         <FadeIn>
           <div className="max-w-3xl mx-auto text-center glass-card p-12 sm:p-16 relative overflow-hidden">
-            {/* Background glow */}
             <div className="absolute inset-0 -z-10 pointer-events-none">
               <div className="absolute w-[300px] h-[300px] rounded-full bg-primary/15 blur-[80px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             </div>
@@ -465,7 +408,7 @@ export default function LandingPage() {
               Join thousands of developers building their skills every day
             </p>
             <Link
-              href="/dashboard"
+              href="/signup"
               className="btn-gradient text-white font-semibold px-10 py-4 rounded-xl text-base inline-flex items-center gap-2 shadow-lg shadow-primary/25 transition-all hover:scale-105"
             >
               Get Started

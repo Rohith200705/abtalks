@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
@@ -8,6 +8,7 @@ import { connectDB } from './config/db';
 import { errorHandler } from './middleware/errorHandler';
 
 // Route imports
+import authRouter from './routes/auth';
 import challengesRouter from './routes/challenges';
 import codeRouter from './routes/code';
 import submissionsRouter from './routes/submissions';
@@ -72,6 +73,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // API Routes
+app.use('/api/auth', authRouter);
 app.use('/api/challenges', challengesRouter);
 app.use('/api/code', codeLimiter, codeRouter);
 app.use('/api/submissions', submissionsRouter);

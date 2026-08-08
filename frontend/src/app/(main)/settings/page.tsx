@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Settings as SettingsIcon,
   User,
@@ -20,10 +20,10 @@ import {
 } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { userApi, githubApi, linkedinApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import type { GitHubStatus, LinkedInStatus } from "@/types";
 
-/* ------------------------------------------------------------------ */
-/*  Animation wrapper                                                  */
-/* ------------------------------------------------------------------ */
 function FadeIn({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
@@ -34,9 +34,6 @@ function FadeIn({ children, className, delay = 0 }: { children: React.ReactNode;
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Toggle switch                                                      */
-/* ------------------------------------------------------------------ */
 function ToggleSwitch({
   enabled,
   onChange,
@@ -72,9 +69,6 @@ function ToggleSwitch({
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Section Header                                                     */
-/* ------------------------------------------------------------------ */
 function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-4">
@@ -84,41 +78,65 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
 export default function SettingsPage() {
-  // Profile settings
-  const [name, setName] = useState("Rohith");
-  const [bio, setBio] = useState("Passionate developer on a 60-day coding journey");
-  const [college, setCollege] = useState("IIIT Hyderabad");
-
-  // Theme
+  const { user } = useAuth();
+  const [name, setName] = useState("");
+  const [bio, setBio] = useState("");
+  const [college, setCollege] = useState("");
   const [darkMode, setDarkMode] = useState(true);
-
-  // Notifications
   const [dailyReminder, setDailyReminder] = useState(true);
   const [streakAlert, setStreakAlert] = useState(true);
   const [weeklyReport, setWeeklyReport] = useState(false);
   const [achievementNotifs, setAchievementNotifs] = useState(true);
-
-  // Connected accounts
   const [githubConnected, setGithubConnected] = useState(false);
   const [linkedinConnected, setLinkedinConnected] = useState(false);
-
-  // Toast
   const [showToast, setShowToast] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setBio(user.bio || "");
+      setCollege(user.college || "");
+    }
+  }, [user]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [ghRes, liRes] = await Promise.allSettled([
+        githubApi.getStatus(),
+        linkedinApi.getStatus(),
+      ]);
+      if (!cancelled) {
+        if (ghRes.status === "fulfilled") {
+          const status = (ghRes.value as any).status ?? (ghRes.value as GitHubStatus);
+          setGithubConnected(status?.connected ?? false);
+        }
+        if (liRes.status === "fulfilled") {
+          const status = (liRes.value as any).status ?? (liRes.value as LinkedInStatus);
+          setLinkedinConnected(status?.connected ?? false);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await userApi.updateProfile({ name, bio, college });
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch {
+      // Silent fail
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="min-h-screen px-4 py-6 sm:px-6 lg:px-8 max-w-3xl mx-auto space-y-6">
-      {/* ============================================================ */}
-      {/*  TOAST                                                        */}
-      {/* ============================================================ */}
       {showToast && (
         <motion.div
           initial={{ opacity: 0, y: -20, scale: 0.95 }}
@@ -131,9 +149,6 @@ export default function SettingsPage() {
         </motion.div>
       )}
 
-      {/* ============================================================ */}
-      {/*  HEADER                                                       */}
-      {/* ============================================================ */}
       <FadeIn>
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
@@ -144,9 +159,6 @@ export default function SettingsPage() {
         </div>
       </FadeIn>
 
-      {/* ============================================================ */}
-      {/*  PROFILE SETTINGS                                             */}
-      {/* ============================================================ */}
       <FadeIn delay={0.05}>
         <div className="glass-card p-6">
           <SectionHeader icon={<User className="w-5 h-5 text-primary" />} title="Profile Settings" />
@@ -182,9 +194,6 @@ export default function SettingsPage() {
         </div>
       </FadeIn>
 
-      {/* ============================================================ */}
-      {/*  THEME                                                        */}
-      {/* ============================================================ */}
       <FadeIn delay={0.08}>
         <div className="glass-card p-6">
           <SectionHeader icon={<Palette className="w-5 h-5 text-purple-400" />} title="Theme" />
@@ -215,50 +224,22 @@ export default function SettingsPage() {
         </div>
       </FadeIn>
 
-      {/* ============================================================ */}
-      {/*  NOTIFICATIONS                                                */}
-      {/* ============================================================ */}
       <FadeIn delay={0.1}>
         <div className="glass-card p-6">
           <SectionHeader icon={<Bell className="w-5 h-5 text-amber-400" />} title="Notifications" />
           <div className="divide-y divide-border">
-            <ToggleSwitch
-              enabled={dailyReminder}
-              onChange={setDailyReminder}
-              label="Daily Challenge Reminder"
-              description="Get reminded to solve your daily challenge"
-            />
-            <ToggleSwitch
-              enabled={streakAlert}
-              onChange={setStreakAlert}
-              label="Streak Alert"
-              description="Warning before your streak breaks"
-            />
-            <ToggleSwitch
-              enabled={weeklyReport}
-              onChange={setWeeklyReport}
-              label="Weekly Progress Report"
-              description="Receive a weekly summary of your progress"
-            />
-            <ToggleSwitch
-              enabled={achievementNotifs}
-              onChange={setAchievementNotifs}
-              label="Achievement Notifications"
-              description="Get notified when you unlock achievements"
-            />
+            <ToggleSwitch enabled={dailyReminder} onChange={setDailyReminder} label="Daily Challenge Reminder" description="Get reminded to solve your daily challenge" />
+            <ToggleSwitch enabled={streakAlert} onChange={setStreakAlert} label="Streak Alert" description="Warning before your streak breaks" />
+            <ToggleSwitch enabled={weeklyReport} onChange={setWeeklyReport} label="Weekly Progress Report" description="Receive a weekly summary of your progress" />
+            <ToggleSwitch enabled={achievementNotifs} onChange={setAchievementNotifs} label="Achievement Notifications" description="Get notified when you unlock achievements" />
           </div>
         </div>
       </FadeIn>
 
-      {/* ============================================================ */}
-      {/*  CONNECTED ACCOUNTS                                           */}
-      {/* ============================================================ */}
       <FadeIn delay={0.13}>
         <div className="glass-card p-6">
           <SectionHeader icon={<ExternalLink className="w-5 h-5 text-blue-400" />} title="Connected Accounts" />
-
           <div className="space-y-3">
-            {/* GitHub */}
             <div className="flex items-center justify-between py-3 border-b border-border last:border-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
@@ -266,29 +247,16 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium">GitHub</p>
-                  <p className="text-xs text-muted">
-                    {githubConnected ? "Connected" : "Not connected"}
-                  </p>
+                  <p className="text-xs text-muted">{githubConnected ? "Connected" : "Not connected"}</p>
                 </div>
               </div>
-              {githubConnected ? (
-                <button
-                  onClick={() => setGithubConnected(false)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all"
-                >
-                  Disconnect
-                </button>
-              ) : (
-                <button
-                  onClick={() => setGithubConnected(true)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all"
-                >
-                  Connect
-                </button>
-              )}
+              <span className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-medium",
+                githubConnected ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-white/5 text-muted border border-border"
+              )}>
+                {githubConnected ? "Connected" : "Not connected"}
+              </span>
             </div>
-
-            {/* LinkedIn */}
             <div className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
@@ -296,34 +264,20 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium">LinkedIn</p>
-                  <p className="text-xs text-muted">
-                    {linkedinConnected ? "Connected" : "Not connected"}
-                  </p>
+                  <p className="text-xs text-muted">{linkedinConnected ? "Connected" : "Not connected"}</p>
                 </div>
               </div>
-              {linkedinConnected ? (
-                <button
-                  onClick={() => setLinkedinConnected(false)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all"
-                >
-                  Disconnect
-                </button>
-              ) : (
-                <button
-                  onClick={() => setLinkedinConnected(true)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all"
-                >
-                  Connect
-                </button>
-              )}
+              <span className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-medium",
+                linkedinConnected ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-white/5 text-muted border border-border"
+              )}>
+                {linkedinConnected ? "Connected" : "Not connected"}
+              </span>
             </div>
           </div>
         </div>
       </FadeIn>
 
-      {/* ============================================================ */}
-      {/*  DATA & PRIVACY                                               */}
-      {/* ============================================================ */}
       <FadeIn delay={0.16}>
         <div className="glass-card p-6">
           <SectionHeader icon={<Shield className="w-5 h-5 text-emerald-400" />} title="Data & Privacy" />
@@ -346,9 +300,6 @@ export default function SettingsPage() {
         </div>
       </FadeIn>
 
-      {/* ============================================================ */}
-      {/*  ABOUT                                                        */}
-      {/* ============================================================ */}
       <FadeIn delay={0.19}>
         <div className="glass-card p-6">
           <SectionHeader icon={<Info className="w-5 h-5 text-blue-400" />} title="About ABTalks" />
@@ -361,20 +312,17 @@ export default function SettingsPage() {
         </div>
       </FadeIn>
 
-      {/* ============================================================ */}
-      {/*  SAVE BUTTON                                                  */}
-      {/* ============================================================ */}
       <FadeIn delay={0.22}>
         <button
           onClick={handleSave}
-          className="w-full py-3 rounded-xl text-sm font-semibold btn-gradient text-white flex items-center justify-center gap-2 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.01]"
+          disabled={saving}
+          className="w-full py-3 rounded-xl text-sm font-semibold btn-gradient text-white flex items-center justify-center gap-2 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Save className="w-4 h-4" />
-          Save Settings
+          {saving ? "Saving..." : "Save Settings"}
         </button>
       </FadeIn>
 
-      {/* Bottom spacer for mobile nav */}
       <div className="h-8 md:h-0" />
     </div>
   );

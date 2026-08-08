@@ -21,60 +21,15 @@ import {
   X,
   ChevronRight,
   TrendingUp,
+  AlertCircle,
 } from "lucide-react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { cn, getDifficultyBg } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { userApi, progressApi, achievementsApi, githubApi, linkedinApi } from "@/lib/api";
-import type { Progress, Achievement, GitHubStatus, LinkedInStatus } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
+import type { User as UserType, Progress, Achievement, GitHubStatus, LinkedInStatus } from "@/types";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 
-/* ------------------------------------------------------------------ */
-/*  Mock data                                                          */
-/* ------------------------------------------------------------------ */
-const mockUser = {
-  _id: "u1",
-  name: "Rohith",
-  username: "rohith",
-  email: "rohith@iiit.ac.in",
-  avatar: "",
-  bio: "Passionate developer on a 60-day coding journey",
-  college: "IIIT Hyderabad",
-  graduationYear: 2025,
-};
-
-const mockProgress: Progress = {
-  _id: "p1",
-  userId: "u1",
-  currentDay: 12,
-  completedDays: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-  streak: 11,
-  longestStreak: 11,
-  xp: 2840,
-  rank: 5,
-  selectedTrack: "default",
-  totalSolved: 11,
-  easySolved: 8,
-  mediumSolved: 3,
-  hardSolved: 0,
-  lastActivityAt: new Date().toISOString(),
-};
-
-const allAchievements = [
-  { id: "first_steps", title: "First Steps", description: "Solved your first challenge", icon: Star, earned: true, xp: 50 },
-  { id: "week_warrior", title: "Week Warrior", description: "Maintained a 7-day streak", icon: Medal, earned: true, xp: 200 },
-  { id: "streak_master", title: "Streak Master", description: "10+ day streak", icon: Flame, earned: true, xp: 300 },
-  { id: "double_digits", title: "Double Digits", description: "Solved 10 challenges", icon: Sparkles, earned: true, xp: 250 },
-  { id: "speed_demon", title: "Speed Demon", description: "Completed a challenge in under 5 minutes", icon: Zap, earned: false, xp: 150 },
-  { id: "quiz_master", title: "Quiz Master", description: "Score 100% on 5 challenges in a row", icon: Trophy, earned: false, xp: 500 },
-  { id: "code_ninja", title: "Code Ninja", description: "Solve 20 challenges", icon: Award, earned: false, xp: 400 },
-  { id: "half_way", title: "Half Way", description: "Complete 30 days of the journey", icon: TrendingUp, earned: false, xp: 350 },
-  { id: "marathon", title: "Marathon", description: "Maintain a 30-day streak", icon: Flame, earned: false, xp: 1000 },
-  { id: "legend", title: "Legend", description: "Complete all 60 days", icon: Trophy, earned: false, xp: 2000 },
-];
-
-/* ------------------------------------------------------------------ */
-/*  Animation wrapper                                                  */
-/* ------------------------------------------------------------------ */
 function FadeIn({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
@@ -85,15 +40,15 @@ function FadeIn({ children, className, delay = 0 }: { children: React.ReactNode;
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
 export default function ProfilePage() {
-  const [user, setUser] = useState(mockUser);
+  const { user: authUser } = useAuth();
+  const [user, setUser] = useState<UserType | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [githubStatus, setGithubStatus] = useState<GitHubStatus | null>(null);
   const [linkedinStatus, setLinkedinStatus] = useState<LinkedInStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
@@ -103,26 +58,24 @@ export default function ProfilePage() {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      setError(null);
       try {
-        const [userRes, progressRes, ghRes, liRes] = await Promise.allSettled([
+        const [userRes, progressRes, achRes, ghRes, liRes] = await Promise.allSettled([
           userApi.getProfile(),
           progressApi.get(),
+          achievementsApi.getAll(),
           githubApi.getStatus(),
           linkedinApi.getStatus(),
         ]);
         if (!cancelled) {
-          setUser(userRes.status === "fulfilled" ? (userRes.value as typeof mockUser) : mockUser);
-          setProgress(progressRes.status === "fulfilled" ? (progressRes.value as Progress) : mockProgress);
-          setGithubStatus(ghRes.status === "fulfilled" ? (ghRes.value as GitHubStatus) : { connected: false, mode: "demo" } as any);
-          setLinkedinStatus(liRes.status === "fulfilled" ? (liRes.value as LinkedInStatus) : { connected: false, mode: "demo" });
+          if (userRes.status === "fulfilled") setUser((userRes.value as any).user ?? userRes.value as UserType);
+          if (progressRes.status === "fulfilled") setProgress((progressRes.value as any).progress ?? (progressRes.value as Progress));
+          if (achRes.status === "fulfilled") setAchievements((achRes.value as any).achievements ?? (achRes.value as Achievement[]));
+          if (ghRes.status === "fulfilled") setGithubStatus((ghRes.value as any).status ?? (ghRes.value as GitHubStatus));
+          if (liRes.status === "fulfilled") setLinkedinStatus((liRes.value as any).status ?? (liRes.value as LinkedInStatus));
         }
       } catch {
-        if (!cancelled) {
-          setUser(mockUser);
-          setProgress(mockProgress);
-          setGithubStatus({ connected: false, mode: "demo" } as any);
-          setLinkedinStatus({ connected: false, mode: "demo" });
-        }
+        if (!cancelled) setError("Failed to load profile data");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -130,167 +83,188 @@ export default function ProfilePage() {
     return () => { cancelled = true; };
   }, []);
 
-  const p = progress ?? mockProgress;
-  const completionPercent = Math.round((p.completedDays.length / 60) * 100);
+  const p = progress;
+  const completionPercent = p ? Math.round((p.completedDays.length / 60) * 100) : 0;
+  const displayUser = user ?? authUser;
 
   const openEdit = () => {
-    setEditName(user.name);
-    setEditBio(user.bio);
-    setEditCollege(user.college);
+    if (displayUser) {
+      setEditName(displayUser.name);
+      setEditBio(displayUser.bio || "");
+      setEditCollege(displayUser.college || "");
+    }
     setShowEditModal(true);
   };
 
+  const handleSaveProfile = async () => {
+    try {
+      await userApi.updateProfile({ name: editName, bio: editBio, college: editCollege });
+      if (displayUser) {
+        const updated = { ...displayUser, name: editName, bio: editBio, college: editCollege };
+        setUser(updated);
+      }
+      setShowEditModal(false);
+    } catch {
+      // Silent fail - user sees old data
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="text-white/40 text-sm">Loading profile...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen px-4 py-6 sm:px-6 lg:px-8 max-w-4xl mx-auto space-y-6">
-      {/* ============================================================ */}
-      {/*  PROFILE HEADER                                               */}
-      {/* ============================================================ */}
-      <FadeIn>
-        <div className="glass-card p-6 sm:p-8 relative overflow-hidden">
-          <div className="absolute -top-20 -right-20 w-48 h-48 bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-secondary/10 rounded-full blur-[80px] pointer-events-none" />
-
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 relative">
-            {/* Avatar */}
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-3xl sm:text-4xl font-bold shrink-0 ring-4 ring-primary/20">
-              {user.name.charAt(0)}
+      {/* PROFILE HEADER */}
+      {displayUser ? (
+        <FadeIn>
+          <div className="glass-card p-6 sm:p-8 relative overflow-hidden">
+            <div className="absolute -top-20 -right-20 w-48 h-48 bg-primary/10 rounded-full blur-[80px] pointer-events-none" />
+            <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-secondary/10 rounded-full blur-[80px] pointer-events-none" />
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 relative">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-3xl sm:text-4xl font-bold shrink-0 ring-4 ring-primary/20">
+                {displayUser.name.charAt(0)}
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <h1 className="text-2xl font-bold">{displayUser.name}</h1>
+                <p className="text-muted text-sm">@{displayUser.username}</p>
+                {displayUser.bio && <p className="text-sm text-white/70 mt-2 max-w-md">{displayUser.bio}</p>}
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3">
+                  {displayUser.college && (
+                    <span className="flex items-center gap-1.5 text-xs text-muted">
+                      <GraduationCap className="w-3.5 h-3.5" />
+                      {displayUser.college}
+                    </span>
+                  )}
+                  {displayUser.graduationYear > 0 && (
+                    <span className="flex items-center gap-1.5 text-xs text-muted">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Class of {displayUser.graduationYear}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={openEdit}
+                className="glass-card px-4 py-2 rounded-xl text-sm font-medium text-muted hover:text-white hover:bg-white/10 transition-all flex items-center gap-2 shrink-0"
+              >
+                <Edit3 className="w-4 h-4" />
+                Edit Profile
+              </button>
             </div>
+          </div>
+        </FadeIn>
+      ) : error ? (
+        <FadeIn>
+          <div className="glass-card p-12 text-center">
+            <AlertCircle className="w-12 h-12 text-red-400/40 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Failed to load profile</h3>
+            <p className="text-sm text-muted">{error}</p>
+          </div>
+        </FadeIn>
+      ) : null}
 
-            {/* Info */}
-            <div className="flex-1 text-center sm:text-left">
-              <h1 className="text-2xl font-bold">{user.name}</h1>
-              <p className="text-muted text-sm">@{user.username}</p>
-              {user.bio && <p className="text-sm text-white/70 mt-2 max-w-md">{user.bio}</p>}
+      {/* STATS OVERVIEW */}
+      {p && (
+        <FadeIn delay={0.05}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="glass-card p-4 text-center">
+              <Zap className="w-5 h-5 text-yellow-400 mx-auto mb-2" />
+              <p className="text-xl font-bold text-yellow-400">{p.xp.toLocaleString()}</p>
+              <p className="text-xs text-muted">Total XP</p>
+            </div>
+            <div className="glass-card p-4 text-center">
+              <Trophy className="w-5 h-5 text-blue-400 mx-auto mb-2" />
+              <p className="text-xl font-bold text-blue-400">#{p.rank}</p>
+              <p className="text-xs text-muted">Rank</p>
+            </div>
+            <div className="glass-card p-4 text-center">
+              <Flame className="w-5 h-5 text-orange-400 mx-auto mb-2" />
+              <p className="text-xl font-bold text-orange-400">{p.streak}</p>
+              <p className="text-xs text-muted">Day Streak</p>
+            </div>
+            <div className="glass-card p-4 text-center">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
+              <p className="text-xl font-bold text-emerald-400">{p.totalSolved}</p>
+              <p className="text-xs text-muted">Challenges Solved</p>
+            </div>
+          </div>
+        </FadeIn>
+      )}
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3">
-                {user.college && (
-                  <span className="flex items-center gap-1.5 text-xs text-muted">
-                    <GraduationCap className="w-3.5 h-3.5" />
-                    {user.college}
-                  </span>
-                )}
-                {user.graduationYear > 0 && (
-                  <span className="flex items-center gap-1.5 text-xs text-muted">
-                    <Calendar className="w-3.5 h-3.5" />
-                    Class of {user.graduationYear}
-                  </span>
-                )}
+      {/* DIFFICULTY BREAKDOWN */}
+      {p && (
+        <FadeIn delay={0.1}>
+          <div className="glass-card p-6">
+            <h3 className="text-base font-semibold mb-4">Difficulty Breakdown</h3>
+            <div className="space-y-4">
+              <ProgressBar
+                label="Easy"
+                value={(p.easySolved / Math.max(p.totalSolved, 1)) * 100}
+                showPercentage
+                color="bg-emerald-400"
+              />
+              <ProgressBar
+                label="Medium"
+                value={(p.mediumSolved / Math.max(p.totalSolved, 1)) * 100}
+                showPercentage
+                color="bg-amber-400"
+              />
+              <ProgressBar
+                label="Hard"
+                value={(p.hardSolved / Math.max(p.totalSolved, 1)) * 100}
+                showPercentage
+                color="bg-red-400"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-border">
+              <div className="text-center">
+                <p className="text-lg font-bold text-emerald-400">{p.easySolved}</p>
+                <p className="text-xs text-muted">Easy</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-amber-400">{p.mediumSolved}</p>
+                <p className="text-xs text-muted">Medium</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-red-400">{p.hardSolved}</p>
+                <p className="text-xs text-muted">Hard</p>
               </div>
             </div>
+          </div>
+        </FadeIn>
+      )}
 
-            {/* Edit button */}
-            <button
-              onClick={openEdit}
-              className="glass-card px-4 py-2 rounded-xl text-sm font-medium text-muted hover:text-white hover:bg-white/10 transition-all flex items-center gap-2 shrink-0"
-            >
-              <Edit3 className="w-4 h-4" />
-              Edit Profile
-            </button>
-          </div>
-        </div>
-      </FadeIn>
-
-      {/* ============================================================ */}
-      {/*  STATS OVERVIEW                                               */}
-      {/* ============================================================ */}
-      <FadeIn delay={0.05}>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="glass-card p-4 text-center">
-            <Zap className="w-5 h-5 text-yellow-400 mx-auto mb-2" />
-            <p className="text-xl font-bold text-yellow-400">{p.xp.toLocaleString()}</p>
-            <p className="text-xs text-muted">Total XP</p>
-          </div>
-          <div className="glass-card p-4 text-center">
-            <Trophy className="w-5 h-5 text-blue-400 mx-auto mb-2" />
-            <p className="text-xl font-bold text-blue-400">#{p.rank}</p>
-            <p className="text-xs text-muted">Rank</p>
-          </div>
-          <div className="glass-card p-4 text-center">
-            <Flame className="w-5 h-5 text-orange-400 mx-auto mb-2" />
-            <p className="text-xl font-bold text-orange-400">{p.streak}</p>
-            <p className="text-xs text-muted">Day Streak</p>
-          </div>
-          <div className="glass-card p-4 text-center">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
-            <p className="text-xl font-bold text-emerald-400">{p.totalSolved}</p>
-            <p className="text-xs text-muted">Challenges Solved</p>
-          </div>
-        </div>
-      </FadeIn>
-
-      {/* ============================================================ */}
-      {/*  DIFFICULTY BREAKDOWN                                         */}
-      {/* ============================================================ */}
-      <FadeIn delay={0.1}>
-        <div className="glass-card p-6">
-          <h3 className="text-base font-semibold mb-4">Difficulty Breakdown</h3>
-          <div className="space-y-4">
-            <ProgressBar
-              label="Easy"
-              value={(p.easySolved / Math.max(p.totalSolved, 1)) * 100}
-              showPercentage
-              color="bg-emerald-400"
-            />
-            <ProgressBar
-              label="Medium"
-              value={(p.mediumSolved / Math.max(p.totalSolved, 1)) * 100}
-              showPercentage
-              color="bg-amber-400"
-            />
-            <ProgressBar
-              label="Hard"
-              value={(p.hardSolved / Math.max(p.totalSolved, 1)) * 100}
-              showPercentage
-              color="bg-red-400"
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-border">
-            <div className="text-center">
-              <p className="text-lg font-bold text-emerald-400">{p.easySolved}</p>
-              <p className="text-xs text-muted">Easy</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-bold text-amber-400">{p.mediumSolved}</p>
-              <p className="text-xs text-muted">Medium</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-bold text-red-400">{p.hardSolved}</p>
-              <p className="text-xs text-muted">Hard</p>
-            </div>
-          </div>
-        </div>
-      </FadeIn>
-
-      {/* ============================================================ */}
-      {/*  ACHIEVEMENTS                                                 */}
-      {/* ============================================================ */}
+      {/* ACHIEVEMENTS */}
       <FadeIn delay={0.15}>
         <div>
           <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
             <Award className="w-5 h-5 text-primary" />
             Achievements
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {allAchievements.map((ach) => {
-              const Icon = ach.icon;
-              return (
+          {achievements.length === 0 ? (
+            <div className="glass-card p-8 text-center">
+              <Award className="w-10 h-10 text-muted/30 mx-auto mb-3" />
+              <p className="text-sm font-medium mb-1">No achievements yet</p>
+              <p className="text-xs text-muted">Complete challenges to earn XP!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {achievements.map((ach) => (
                 <motion.div
-                  key={ach.id}
-                  whileHover={{ scale: ach.earned ? 1.03 : 1 }}
-                  className={cn(
-                    "glass-card p-4 flex flex-col items-center text-center gap-2 transition-all duration-300",
-                    ach.earned ? "glass-card-hover" : "opacity-50 grayscale"
-                  )}
+                  key={ach._id}
+                  whileHover={{ scale: 1.03 }}
+                  className="glass-card p-4 flex flex-col items-center text-center gap-2 transition-all duration-300 glass-card-hover"
                 >
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center",
-                    ach.earned ? "bg-gradient-to-br from-primary/20 to-secondary/20" : "bg-white/5"
-                  )}>
-                    {ach.earned ? (
-                      <Icon className="w-5 h-5 text-primary" />
-                    ) : (
-                      <Lock className="w-5 h-5 text-muted/40" />
-                    )}
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                    <Award className="w-5 h-5 text-primary" />
                   </div>
                   <p className="text-xs font-bold">{ach.title}</p>
                   <p className="text-[10px] text-muted leading-tight">{ach.description}</p>
@@ -299,20 +273,17 @@ export default function ProfilePage() {
                     {ach.xp} XP
                   </div>
                 </motion.div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </FadeIn>
 
-      {/* ============================================================ */}
-      {/*  CONNECTED SERVICES                                           */}
-      {/* ============================================================ */}
+      {/* CONNECTED SERVICES */}
       <FadeIn delay={0.2}>
         <div>
           <h3 className="text-base font-semibold mb-4">Connected Services</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* GitHub */}
             <div className="glass-card p-5 flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
                 <GitBranch className="w-6 h-6" />
@@ -320,7 +291,7 @@ export default function ProfilePage() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold">GitHub</p>
                 <p className="text-xs text-muted truncate">
-                  {githubStatus?.connected ? `Connected as @${githubStatus.username}` : "Not connected"}
+                  {githubStatus?.connected ? "Connected as @" + githubStatus.username : "Not connected"}
                 </p>
               </div>
               {githubStatus?.connected ? (
@@ -329,13 +300,11 @@ export default function ProfilePage() {
                   Connected
                 </span>
               ) : (
-                <button className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all">
-                  Connect
-                </button>
+                <span className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 text-muted border border-border">
+                  Not connected
+                </span>
               )}
             </div>
-
-            {/* LinkedIn */}
             <div className="glass-card p-5 flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
                 <Share2 className="w-6 h-6 text-[#0A66C2]" />
@@ -352,18 +321,16 @@ export default function ProfilePage() {
                   Connected
                 </span>
               ) : (
-                <button className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-all">
-                  Connect
-                </button>
+                <span className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 text-muted border border-border">
+                  Not connected
+                </span>
               )}
             </div>
           </div>
         </div>
       </FadeIn>
 
-      {/* ============================================================ */}
-      {/*  EDIT PROFILE MODAL                                           */}
-      {/* ============================================================ */}
+      {/* EDIT PROFILE MODAL */}
       <AnimatePresence>
         {showEditModal && (
           <motion.div
@@ -387,7 +354,6 @@ export default function ProfilePage() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-
               <div className="space-y-4">
                 <div>
                   <label className="text-xs text-muted font-medium block mb-1.5">Name</label>
@@ -417,7 +383,6 @@ export default function ProfilePage() {
                   />
                 </div>
               </div>
-
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowEditModal(false)}
@@ -426,10 +391,7 @@ export default function ProfilePage() {
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    setUser({ ...user, name: editName, bio: editBio, college: editCollege });
-                    setShowEditModal(false);
-                  }}
+                  onClick={handleSaveProfile}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold btn-gradient text-white"
                 >
                   Save Changes
@@ -440,7 +402,6 @@ export default function ProfilePage() {
         )}
       </AnimatePresence>
 
-      {/* Bottom spacer for mobile nav */}
       <div className="h-8 md:h-0" />
     </div>
   );

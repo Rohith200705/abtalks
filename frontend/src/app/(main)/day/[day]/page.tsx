@@ -38,86 +38,8 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ),
 });
 
-/* ───────────── Mock Data ───────────── */
-
-const mockChallenge: Challenge = {
-  _id: "day12",
-  day: 12,
-  title: "Two Sum",
-  slug: "two-sum",
-  difficulty: "easy",
-  topics: ["Arrays", "Hash Map"],
-  description:
-    "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nYou can return the answer in any order.",
-  examples: [
-    {
-      input: "nums = [2,7,11,15], target = 9",
-      output: "[0,1]",
-      explanation: "Because nums[0] + nums[1] == 9, we return [0, 1].",
-    },
-    {
-      input: "nums = [3,2,4], target = 6",
-      output: "[1,2]",
-      explanation: "Because nums[1] + nums[2] == 6, we return [1, 2].",
-    },
-  ],
-  constraints: [
-    "2 <= nums.length <= 10^4",
-    "-10^9 <= nums[i] <= 10^9",
-    "-10^9 <= target <= 10^9",
-    "Only one valid answer exists.",
-  ],
-  starterCode: {
-    python: 'from typing import List\n\ndef twoSum(nums: List[int], target: int) -> List[int]:\n    # Write your solution here\n    pass',
-    javascript: '/**\n * @param {number[]} nums\n * @param {number} target\n * @return {number[]}\n */\nfunction twoSum(nums, target) {\n    // Write your solution here\n    \n};',
-    cpp: 'class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        // Write your solution here\n        \n    }\n};',
-  },
-  testCases: [
-    { input: "[2,7,11,15]\n9", expectedOutput: "[0,1]" },
-    { input: "[3,2,4]\n6", expectedOutput: "[1,2]" },
-    { input: "[3,3]\n6", expectedOutput: "[0,1]" },
-  ],
-  solvedPercentage: 82,
-  order: 12,
-};
-
-const mockRunResult: CodeRunResult = {
-  status: "accepted",
-  stdout: "",
-  stderr: "",
-  compileOutput: "",
-  passed: 3,
-  total: 3,
-  runtime: 42,
-  memory: 12.5,
-  testResults: [
-    { passed: true, input: "nums=[2,7,11,15], target=9", expected: "[0,1]", actual: "[0,1]" },
-    { passed: true, input: "nums=[3,2,4], target=6", expected: "[1,2]", actual: "[1,2]" },
-    { passed: true, input: "nums=[3,3], target=6", expected: "[0,1]", actual: "[0,1]" },
-  ],
-};
-
-const mockTrace: ExecutionStep[] = [
-  { step: 1, line: 1, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9 }, structures: { nums: [2, 7, 11, 15] }, expression: "twoSum(nums=[2,7,11,15], target=9)" },
-  { step: 2, line: 2, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4 }, structures: { nums: [2, 7, 11, 15] }, expression: "n = len(nums) = 4", value: 4 },
-  { step: 3, line: 3, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4, seen: {} }, structures: { nums: [2, 7, 11, 15] }, expression: "seen = {}", value: {} },
-  { step: 4, line: 4, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4, seen: {}, i: 0 }, structures: { nums: [2, 7, 11, 15], pointers: { i: 0 } }, expression: "i = 0" },
-  { step: 5, line: 5, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4, seen: {}, i: 0 }, structures: { nums: [2, 7, 11, 15], pointers: { i: 0 } }, expression: "i < n -> 0 < 4 -> True", value: true },
-  { step: 6, line: 6, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4, seen: {}, i: 0, complement: 7 }, structures: { nums: [2, 7, 11, 15], pointers: { i: 0 } }, expression: "complement = target - nums[i] = 9 - 2 = 7", value: 7 },
-  { step: 7, line: 7, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4, seen: {}, i: 0, complement: 7 }, structures: { nums: [2, 7, 11, 15], pointers: { i: 0 } }, expression: "complement in seen -> 7 in {} -> False", value: false },
-  { step: 8, line: 9, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4, seen: { 2: 0 }, i: 0, complement: 7 }, structures: { nums: [2, 7, 11, 15], pointers: { i: 0 } }, expression: "seen[nums[i]] = i -> seen[2] = 0", value: 0 },
-  { step: 9, line: 4, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4, seen: { 2: 0 }, i: 1 }, structures: { nums: [2, 7, 11, 15], pointers: { i: 1 } }, expression: "i = i + 1 = 1" },
-  { step: 10, line: 5, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4, seen: { 2: 0 }, i: 1 }, structures: { nums: [2, 7, 11, 15], pointers: { i: 1 } }, expression: "i < n -> 1 < 4 -> True", value: true },
-  { step: 11, line: 6, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4, seen: { 2: 0 }, i: 1, complement: 2 }, structures: { nums: [2, 7, 11, 15], pointers: { i: 1 } }, expression: "complement = target - nums[i] = 9 - 7 = 2", value: 2 },
-  { step: 12, line: 7, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4, seen: { 2: 0 }, i: 1, complement: 2 }, structures: { nums: [2, 7, 11, 15], pointers: { i: 1 } }, expression: "complement in seen -> 2 in {2: 0} -> True", value: true },
-  { step: 13, line: 8, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4, seen: { 2: 0 }, i: 1, complement: 2 }, structures: { nums: [2, 7, 11, 15], pointers: { i: 1 } }, expression: "return [seen[complement], i] -> [0, 1]", value: [0, 1] },
-  { step: 14, line: 8, function: "twoSum", variables: { nums: [2, 7, 11, 15], target: 9, n: 4, seen: { 2: 0 }, i: 1, complement: 2, result: [0, 1] }, structures: { nums: [2, 7, 11, 15], result: [0, 1], pointers: { i: 1 } }, expression: "return [0, 1]" },
-];
-
 const languageMap: Record<string, string> = { python: "python", javascript: "javascript", cpp: "cpp" };
 type Language = "python" | "javascript" | "cpp";
-
-/* ───────────── Page ───────────── */
 
 export default function DayPage() {
   const params = useParams();
@@ -126,6 +48,7 @@ export default function DayPage() {
 
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState<Language>("python");
   const [code, setCode] = useState("");
   const [runLoading, setRunLoading] = useState(false);
@@ -151,11 +74,12 @@ export default function DayPage() {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      setError(null);
       try {
         const data: any = await challengesApi.getByDay(dayNumber);
         if (!cancelled) setChallenge(data.challenge ?? data);
       } catch {
-        if (!cancelled) setChallenge(mockChallenge);
+        if (!cancelled) setError("Failed to load challenge");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -173,9 +97,9 @@ export default function DayPage() {
     setRunResult(null);
     try {
       const result: any = await codeApi.run({ code, language, challengeId: challenge._id });
-      setRunResult(result as CodeRunResult);
+      setRunResult((result.result ?? result) as CodeRunResult);
     } catch {
-      setRunResult(mockRunResult);
+      setRunResult(null);
     } finally {
       setRunLoading(false);
       setActiveSection("results");
@@ -185,11 +109,12 @@ export default function DayPage() {
   const handleVisualize = useCallback(async () => {
     if (!challenge) return;
     setVizLoading(true);
+    setTrace([]);
     try {
       const result: any = await codeApi.visualize({ code, language, challengeSlug: challenge.slug });
       setTrace(result.trace ?? result.steps ?? (result as ExecutionStep[]));
     } catch {
-      setTrace(mockTrace);
+      setTrace([]);
     } finally {
       setVizLoading(false);
       setActiveSection("viz");
@@ -202,20 +127,14 @@ export default function DayPage() {
     try {
       const result: any = await submissionsApi.submit({ challengeId: challenge._id, language, code });
       setCompletionResult({
-        xpEarned: result.xpEarned ?? 50,
-        newStreak: result.streak ?? 1,
-        githubStatus: result.githubStatus ?? "connected",
-        linkedinStatus: result.linkedinStatus ?? "connected",
-        achievements: result.achievements ?? [{ title: "Two Sum Solver", description: "Solved the Two Sum challenge", xp: 10 }],
+        xpEarned: result.xp?.xpEarned ?? result.xpEarned ?? 0,
+        newStreak: result.streak?.current ?? result.streak ?? 0,
+        githubStatus: result.github?.status ?? result.githubStatus ?? "disconnected",
+        linkedinStatus: result.linkedin?.status ?? result.linkedinStatus ?? "disconnected",
+        achievements: result.achievements ?? [],
       });
     } catch {
-      setCompletionResult({
-        xpEarned: 50,
-        newStreak: 1,
-        githubStatus: "connected",
-        linkedinStatus: "connected",
-        achievements: [{ title: "Two Sum Solver", description: "Solved the Two Sum challenge", xp: 10 }],
-      });
+      setCompletionResult(null);
     } finally {
       setSubmitLoading(false);
       setShowCompletion(true);
@@ -226,7 +145,6 @@ export default function DayPage() {
     setExpandedExamples((prev) => prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]);
   };
 
-  /* ── Loading ── */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
@@ -238,24 +156,24 @@ export default function DayPage() {
     );
   }
 
-  if (!challenge) {
+  if (error || !challenge) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <Card variant="glow" padding="lg" className="text-center max-w-md">
           <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto mb-3" />
           <h2 className="text-lg font-semibold mb-2">Challenge Not Found</h2>
-          <p className="text-white/50 text-sm mb-4">Day {dayNumber} could not be loaded.</p>
+          <p className="text-white/50 text-sm mb-4">
+            {error || "Day " + dayNumber + " could not be loaded."}
+          </p>
           <Button variant="secondary" onClick={() => router.push("/dashboard")}>Back to Dashboard</Button>
         </Card>
       </div>
     );
   }
 
-  /* ── Main Render ── */
   return (
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
-        {/* Header */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-6">
           <div className="flex flex-wrap items-center gap-3 mb-3">
             <Badge variant="info" className="text-sm font-bold px-3 py-1">Day {challenge.day}</Badge>
@@ -276,9 +194,7 @@ export default function DayPage() {
         </motion.div>
 
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* ── Left: Problem ── */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="w-full lg:w-[420px] lg:flex-shrink-0 space-y-4">
-            {/* Description */}
             <Card variant="default" padding="md">
               <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <Code2 className="w-4 h-4" />
@@ -287,7 +203,6 @@ export default function DayPage() {
               <div className="text-sm text-white/80 leading-relaxed whitespace-pre-line">{challenge.description}</div>
             </Card>
 
-            {/* Examples */}
             <Card variant="default" padding="md">
               <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">Examples</h2>
               <div className="space-y-3">
@@ -324,13 +239,12 @@ export default function DayPage() {
               </div>
             </Card>
 
-            {/* Constraints */}
             <Card variant="default" padding="md">
               <h2 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-3">Constraints</h2>
               <ul className="space-y-2">
                 {challenge.constraints.map((constraint, idx) => (
                   <li key={idx} className="text-xs text-white/60 flex items-start gap-2">
-                    <span className="text-primary mt-0.5">{'\u2022'}</span>
+                    <span className="text-primary mt-0.5">{"\u2022"}</span>
                     <code className="font-mono text-white/70 bg-white/5 px-1.5 py-0.5 rounded text-[11px]">{constraint}</code>
                   </li>
                 ))}
@@ -338,9 +252,7 @@ export default function DayPage() {
             </Card>
           </motion.div>
 
-          {/* ── Right: Editor + Results ── */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: 0.2 }} className="flex-1 min-w-0 space-y-4">
-            {/* Language + Editor */}
             <Card variant="default" padding="none" className="overflow-hidden">
               <div className="flex items-center border-b border-white/5 bg-white/[0.02]">
                 {(["python", "javascript", "cpp"] as Language[]).map((lang) => (
@@ -375,7 +287,6 @@ export default function DayPage() {
               />
             </Card>
 
-            {/* Action Buttons */}
             <div className="flex gap-3">
               <Button variant="secondary" size="lg" onClick={handleRun} loading={runLoading} className="flex-1">
                 <Play className="w-4 h-4" />
@@ -391,16 +302,21 @@ export default function DayPage() {
               </Button>
             </div>
 
-            {/* Test Results */}
             <AnimatePresence mode="wait">
               {activeSection === "results" && runResult && (
                 <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
                   <TestResultsPanel result={runResult} />
                 </motion.div>
               )}
+              {activeSection === "results" && !runResult && !runLoading && (
+                <motion.div key="no-results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
+                  <Card variant="default" padding="lg" className="text-center">
+                    <p className="text-sm text-white/40">No results yet. Click Run to test your code.</p>
+                  </Card>
+                </motion.div>
+              )}
             </AnimatePresence>
 
-            {/* Visualization */}
             <AnimatePresence mode="wait">
               {activeSection === "viz" && (
                 <motion.div key="viz" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.3 }}>
@@ -408,6 +324,11 @@ export default function DayPage() {
                     <Card variant="default" padding="lg" className="text-center">
                       <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
                       <p className="text-sm text-white/40">Generating execution trace...</p>
+                    </Card>
+                  ) : trace.length === 0 ? (
+                    <Card variant="default" padding="lg" className="text-center">
+                      <Eye className="w-8 h-8 text-white/20 mx-auto mb-3" />
+                      <p className="text-sm text-white/40">Click Visualize to see execution trace</p>
                     </Card>
                   ) : (
                     <ExecutionVisualizer trace={trace} code={code} language={language} />
@@ -419,7 +340,6 @@ export default function DayPage() {
         </div>
       </div>
 
-      {/* Completion Modal */}
       <CompletionModal
         isOpen={showCompletion}
         onClose={() => setShowCompletion(false)}
@@ -430,8 +350,6 @@ export default function DayPage() {
     </div>
   );
 }
-
-/* ───────────── Test Results Panel ───────────── */
 
 function TestResultsPanel({ result }: { result: CodeRunResult }) {
   return (

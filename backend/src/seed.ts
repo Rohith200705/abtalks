@@ -1,4 +1,10 @@
 ﻿import mongoose, { Types } from 'mongoose';
+import bcrypt from 'bcryptjs';
+import dns from 'dns';
+
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
+
 import { env } from './config/env';
 import { User } from './models/User';
 import { Challenge } from './models/Challenge';
@@ -8,6 +14,9 @@ import { Achievement } from './models/Achievement';
 const oid = (id: string) => new Types.ObjectId(id);
 
 const demoUserId = oid('65a1b2c3d4e5f6a7b8c9d0e1');
+
+// Pre-hashed password for 'password123' (bcrypt, 10 rounds)
+const HASHED_PASSWORD = '$2b$10$g0XC0cxH6/E9DATmcYF7huoQttMZor3BPhYoZuIO4.pr73NoMZFle';
 
 // ============================================================
 // CHALLENGES
@@ -460,6 +469,7 @@ const demoUser = {
   name: 'Rohith',
   username: 'rohith',
   email: 'rohith@abtalks.dev',
+  password: HASHED_PASSWORD,
   avatar: '',
   bio: 'Passionate developer on a 60-day coding journey',
   college: 'IIIT Hyderabad',
@@ -473,6 +483,7 @@ const leaderboardUsers: any[] = [
     name: 'Priya',
     username: 'priya',
     email: 'priya@abtalks.dev',
+    password: HASHED_PASSWORD,
     avatar: '',
     bio: 'Full-stack developer and problem solver',
     college: 'IIT Bombay',
@@ -484,6 +495,7 @@ const leaderboardUsers: any[] = [
     name: 'Arjun',
     username: 'arjun',
     email: 'arjun@abtalks.dev',
+    password: HASHED_PASSWORD,
     avatar: '',
     bio: 'Passionate about algorithms and system design',
     college: 'IIT Delhi',
@@ -495,6 +507,7 @@ const leaderboardUsers: any[] = [
     name: 'Sneha',
     username: 'sneha',
     email: 'sneha@abtalks.dev',
+    password: HASHED_PASSWORD,
     avatar: '',
     bio: 'Love solving puzzles and coding challenges',
     college: 'NIT Trichy',
@@ -506,6 +519,7 @@ const leaderboardUsers: any[] = [
     name: 'Vikram',
     username: 'vikram',
     email: 'vikram@abtalks.dev',
+    password: HASHED_PASSWORD,
     avatar: '',
     bio: 'Competitive programmer and tech enthusiast',
     college: 'BITS Pilani',
@@ -517,6 +531,7 @@ const leaderboardUsers: any[] = [
     name: 'Ananya',
     username: 'ananya',
     email: 'ananya@abtalks.dev',
+    password: HASHED_PASSWORD,
     avatar: '',
     bio: 'Aspiring software engineer',
     college: 'IIIT Bangalore',
@@ -528,6 +543,7 @@ const leaderboardUsers: any[] = [
     name: 'Karthik',
     username: 'karthik',
     email: 'karthik@abtalks.dev',
+    password: HASHED_PASSWORD,
     avatar: '',
     bio: 'Building things one line at a time',
     college: 'VIT Vellore',
@@ -539,6 +555,7 @@ const leaderboardUsers: any[] = [
     name: 'Divya',
     username: 'divya',
     email: 'divya@abtalks.dev',
+    password: HASHED_PASSWORD,
     avatar: '',
     bio: 'Data structures and algorithms enthusiast',
     college: 'SRM University',
@@ -550,6 +567,7 @@ const leaderboardUsers: any[] = [
     name: 'Rahul',
     username: 'rahul',
     email: 'rahul@abtalks.dev',
+    password: HASHED_PASSWORD,
     avatar: '',
     bio: 'Exploring the world of coding',
     college: 'Manipal Institute of Technology',
@@ -561,6 +579,7 @@ const leaderboardUsers: any[] = [
     name: 'Meera',
     username: 'meera',
     email: 'meera@abtalks.dev',
+    password: HASHED_PASSWORD,
     avatar: '',
     bio: 'Learning and growing every day',
     college: 'NIT Warangal',
@@ -827,7 +846,7 @@ async function seed(): Promise<void> {
     console.log(`  Progress records: ${progressRecords.length}`);
     console.log(`  Achievements: ${demoAchievements.length}`);
     console.log('');
-    console.log('Demo user login: rohith@abtalks.dev');
+    console.log('Demo user login: rohith@abtalks.dev / password123');
   } catch (error) {
     console.error('Seed failed:', error);
     process.exit(1);
